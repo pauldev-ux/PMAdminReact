@@ -1,30 +1,36 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { listBrands } from "../../api/brands";
+import { listLots } from "../../api/lots"; // 👈 NUEVO
 import { createProduct, uploadProductImage } from "../../api/products";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const input   = { padding: 10, border: "1px solid #ddd", borderRadius: 10, width: "100%" };
 const btn     = { padding: "8px 12px", border: "1px solid #ddd", borderRadius: 10, background: "#f7f7f7", cursor: "pointer" };
 const btnPrim = { padding: "10px 14px", border: "1px solid #0ea5e9", borderRadius: 10, background: "#0ea5e9", color: "white", cursor: "pointer" };
+const hint    = { fontSize: 12, color: "#666" };
 
 export default function NewProduct() {
   const { token } = useAuth();
   const nav = useNavigate();
   const [params] = useSearchParams();
 
+  // selects
   const [brands, setBrands] = useState([]);
+  const [lots, setLots] = useState([]);
   const [loadingBrands, setLoadingBrands] = useState(true);
+  const [loadingLots, setLoadingLots] = useState(true);
 
   // form
   const [nombre, setNombre] = useState("");
   const [brandId, setBrandId] = useState("");
-  const [precioCompra, setPrecioCompra] = useState(""); // BOB/CLP? → tu backend lo guarda como Decimal (solo número)
-  const [envio, setEnvio] = useState("50");             // BOB por defecto
-  const [ganancia, setGanancia] = useState("150");      // BOB por defecto
-  const [precioVenta, setPrecioVenta] = useState("");   // calculado
-  const [autoCalc, setAutoCalc] = useState(true);       // controla si precioVenta se recalcula
-  const [cantidad, setCantidad] = useState("0");
+  const [lotId, setLotId] = useState("");          // 👈 NUEVO (obligatorio)
+  const [precioCompra, setPrecioCompra] = useState("");
+  const [envio, setEnvio] = useState("50");
+  const [ganancia, setGanancia] = useState("150");
+  const [precioVenta, setPrecioVenta] = useState("");
+  const [autoCalc, setAutoCalc] = useState(true);
+  const [cantidad, setCantidad] = useState("1");    // por defecto 1 para cumplir back
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -34,7 +40,7 @@ export default function NewProduct() {
 
   // cargar marcas
   useEffect(() => {
-    async function load() {
+    async function loadBrands() {
       setLoadingBrands(true);
       try {
         const data = await listBrands(token);
@@ -45,10 +51,24 @@ export default function NewProduct() {
         setLoadingBrands(false);
       }
     }
-    load();
+    loadBrands();
   }, [token]);
 
-  // clonado rápido (opcional): si viene ?clone=ID podrías precargar desde store/estado; por simplicidad lo dejamos como futura mejora.
+  // cargar lotes
+  useEffect(() => {
+    async function loadLots() {
+      setLoadingLots(true);
+      try {
+        const data = await listLots({}, token); // sin filtros: traemos todos, el back ya ordena por fecha/creación
+        setLots(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setErr(e.message || "Error cargando lotes");
+      } finally {
+        setLoadingLots(false);
+      }
+    }
+    loadLots();
+  }, [token]);
 
   const pc = toNum(precioCompra);
   const ev = toNum(envio);
@@ -70,11 +90,12 @@ export default function NewProduct() {
   }
 
   function validate() {
+    if (!lotId) return "Debes seleccionar un lote.";
     if (nombre.trim().length < 2) return "El nombre debe tener al menos 2 caracteres.";
     if (!isFiniteNumber(pc) || pc < 0) return "Precio de compra inválido.";
     if (!isFiniteNumber(toNum(precioVenta)) || toNum(precioVenta) < 0) return "Precio de venta inválido.";
     const qty = Number(cantidad);
-    if (!Number.isInteger(qty) || qty < 0) return "Cantidad inválida.";
+    if (!Number.isInteger(qty) || qty <= 0) return "Cantidad inválida (debe ser mayor a 0).";
     return null;
   }
 
@@ -92,6 +113,7 @@ export default function NewProduct() {
         precio_venta:  normalizeDec(precioVenta),
         cantidad: Number(cantidad),
         activo: true,
+        lot_id: Number(lotId),           // 👈 NUEVO: exigido por el backend
       };
       const created = await createProduct(payload, token);
       let updated = created;
@@ -99,7 +121,6 @@ export default function NewProduct() {
         updated = await uploadProductImage(created.id, image, token);
       }
       setOk(`Producto creado: ${updated.nombre} (id ${updated.id})`);
-      // ir al listado tras 1.5s o al instante
       setTimeout(() => nav("/perfumes"), 700);
     } catch (e) {
       setErr(e.message || "No se pudo crear el producto");
@@ -108,16 +129,44 @@ export default function NewProduct() {
     }
   }
 
+  // ordenar lotes por fecha desc, luego id desc (para que salgan arriba los recientes)
+  const sortedLots = useMemo(() => {
+    return [...lots].sort((a, b) => {
+      const fa = a.fecha || a.created_at || "";
+      const fb = b.fecha || b.created_at || "";
+      if (fa > fb) return -1;
+      if (fa < fb) return 1;
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [lots]);
+
   return (
     <div style={{ padding: "16px 0" }}>
-      <h2>Nuevo producto</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+        <h2>Nuevo producto</h2>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn" style={btn} onClick={() => nav("/lotes/nuevo")}>Crear lote</button>
+          <button className="btn" style={btn} onClick={() => nav("/perfumes")}>Volver</button>
+        </div>
+      </div>
 
       <form onSubmit={onSubmit}
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, alignItems: "end", marginTop: 12 }}>
+        {/* Lote (obligatorio) */}
         <div style={{ gridColumn: "span 2" }}>
-          <label>Nombre</label>
-          <input style={input} value={nombre} onChange={(e)=>setNombre(e.target.value)} placeholder="Sauvage EDT 100ml" required />
+          <label>Lote <span style={{ color:"#b00020" }}>*</span></label>
+          <select style={input} value={lotId} onChange={(e)=>setLotId(e.target.value)} disabled={loadingLots}>
+            <option value="">— Seleccionar lote —</option>
+            {sortedLots.map(l => (
+              <option key={l.id} value={l.id}>
+                {l.nombre} — { (l.fecha || l.created_at || "").slice(0,10) } — #{l.id}
+              </option>
+            ))}
+          </select>
+          <div style={hint}>Si no aparece, crea un lote y vuelve.</div>
         </div>
+
+        {/* Marca */}
         <div style={{ gridColumn: "span 2" }}>
           <label>Marca</label>
           <select style={input} value={brandId} onChange={(e)=>setBrandId(e.target.value)} disabled={loadingBrands}>
@@ -128,6 +177,13 @@ export default function NewProduct() {
           </select>
         </div>
 
+        {/* Nombre */}
+        <div style={{ gridColumn: "span 2" }}>
+          <label>Nombre</label>
+          <input style={input} value={nombre} onChange={(e)=>setNombre(e.target.value)} placeholder="Sauvage EDT 100ml" required />
+        </div>
+
+        {/* Precios */}
         <div>
           <label>Precio compra</label>
           <input style={input} value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} placeholder="250.00" />
@@ -156,19 +212,23 @@ export default function NewProduct() {
           />
         </div>
 
+        {/* Cantidad */}
         <div>
           <label>Cantidad</label>
-          <input style={input} type="number" min="0" step="1" value={cantidad} onChange={(e)=>setCantidad(e.target.value)} />
+          <input style={input} type="number" min="1" step="1" value={cantidad} onChange={(e)=>setCantidad(e.target.value)} />
+          <div style={hint}>Debe ser &gt; 0 (se asentará en el lote).</div>
         </div>
 
+        {/* Imagen */}
         <div style={{ gridColumn: "span 2" }}>
           <label>Imagen (opcional)</label>
           <input type="file" accept="image/*" onChange={onFile} style={input} />
           {preview && <img src={preview} alt="preview" style={{ marginTop: 8, width: 120, height: 120, objectFit: "cover", borderRadius: 12, border: "1px solid #eee" }} />}
         </div>
 
+        {/* Acciones */}
         <div style={{ display: "flex", gap: 8, gridColumn: "span 2" }}>
-          <button disabled={saving} style={btnPrim}>{saving ? "Guardando…" : "Guardar"}</button>
+          <button disabled={saving || loadingLots} style={btnPrim}>{saving ? "Guardando…" : "Guardar"}</button>
           <button type="button" onClick={()=>nav("/perfumes")} style={btn}>Cancelar</button>
         </div>
       </form>

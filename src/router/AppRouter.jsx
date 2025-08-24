@@ -11,6 +11,8 @@ import Reports from "../pages/Reports/Reports";
 import Container from "../components/Layout/Container";
 import NewProduct from "../pages/Perfumes/NewProduct";
 import EditProduct from "../pages/Perfumes/EditProduct";
+import Lots from "../pages/Lots/Lotes";          
+import NewLot from "../pages/Lots/NewLot";
 
 function PrivateGuard() {
   const { token, loadingUser } = useAuth();
@@ -48,6 +50,8 @@ export default function AppRouter() {
             <Route path="/marcas" element={<Brands />} />
             <Route path="/ventas" element={<Sales />} />
             <Route path="/reportes" element={<Reports />} />
+            <Route path="/lotes" element={<Lots />} />
+            <Route path="/lotes/nuevo" element={<NewLot />} />
           </Route>
         </Route>
 

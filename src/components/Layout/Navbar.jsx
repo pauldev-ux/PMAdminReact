@@ -32,6 +32,8 @@ export default function Navbar() {
             <NavLink to="/marcas"   style={linkStyle}>Marca</NavLink>
             <NavLink to="/ventas"   style={linkStyle}>Ventas{count>0?` (${count})`:""}</NavLink>
             <NavLink to="/reportes" style={linkStyle}>Reportes de Ventas</NavLink>
+            <NavLink to="/lotes" style={linkStyle}>Lotes</NavLink>
+
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ color: "#555" }}>{user?.full_name || user?.username}</span>
