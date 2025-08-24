@@ -2,13 +2,15 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Layout/Navbar";
-import Home from "../pages/Home/Home";         // ya lo tenías
-import Login from "../pages/Login/Login";      // ya lo tenías
+import Home from "../pages/Home/Home";         
+import Login from "../pages/Login/Login";      
 import Perfumes from "../pages/Perfumes/Perfumes";
 import Brands from "../pages/Brands/Brands";
 import Sales from "../pages/Sales/Sales";
 import Reports from "../pages/Reports/Reports";
 import Container from "../components/Layout/Container";
+import NewProduct from "../pages/Perfumes/NewProduct";
+import EditProduct from "../pages/Perfumes/EditProduct";
 
 function PrivateGuard() {
   const { token, loadingUser } = useAuth();
@@ -41,6 +43,8 @@ export default function AppRouter() {
             <Route path="/" element={<Navigate to="/perfumes" replace />} />
             <Route path="/home" element={<Home />} />
             <Route path="/perfumes" element={<Perfumes />} />
+            <Route path="/perfumes/nuevo" element={<NewProduct />} />
+            <Route path="/perfumes/:id/editar" element={<EditProduct />} />
             <Route path="/marcas" element={<Brands />} />
             <Route path="/ventas" element={<Sales />} />
             <Route path="/reportes" element={<Reports />} />

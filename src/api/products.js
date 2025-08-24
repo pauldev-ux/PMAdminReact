@@ -21,3 +21,13 @@ export function uploadProductImage(productId, file, token) {
   form.append("file", file);
   return apiFetch(`/products/${productId}/image`, { method: "POST", body: form }, token);
 }
+
+
+export function getProduct(id, token) {
+  return apiFetch(`/products/${id}`, {}, token);
+}
+
+export function updateProduct(id, partial, token) {
+  // partial = { nombre?, brand_id?, precio_compra?, precio_venta?, cantidad?, activo?, image_url? }
+  return apiFetch(`/products/${id}`, { method: "PATCH", body: partial }, token);
+}
