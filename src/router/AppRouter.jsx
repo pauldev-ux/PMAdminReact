@@ -1,23 +1,54 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Home from "../pages/Home/Home";
-import Login from "../pages/Login/Login";
+import Navbar from "../components/Layout/Navbar";
+import Home from "../pages/Home/Home";         // ya lo tenías
+import Login from "../pages/Login/Login";      // ya lo tenías
+import Perfumes from "../pages/Perfumes/Perfumes";
+import Brands from "../pages/Brands/Brands";
+import Sales from "../pages/Sales/Sales";
+import Reports from "../pages/Reports/Reports";
+import Container from "../components/Layout/Container";
 
-function PrivateRoute({ children }) {
+function PrivateGuard() {
   const { token, loadingUser } = useAuth();
-  if (loadingUser) return <div style={{ padding: 24 }}>Cargando…</div>;
+  if (loadingUser) return <Container><div>Cargando…</div></Container>;
   if (!token) return <Navigate to="/login" replace />;
-  return children;
+  return <Outlet />;
+}
+
+function PrivateLayout() {
+  return (
+    <>
+      <Navbar />
+      <Container>
+        <Outlet />
+      </Container>
+    </>
+  );
 }
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* públicas */}
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* privadas */}
+        <Route element={<PrivateGuard />}>
+          <Route element={<PrivateLayout />}>
+            <Route path="/" element={<Navigate to="/perfumes" replace />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/perfumes" element={<Perfumes />} />
+            <Route path="/marcas" element={<Brands />} />
+            <Route path="/ventas" element={<Sales />} />
+            <Route path="/reportes" element={<Reports />} />
+          </Route>
+        </Route>
+
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/perfumes" replace />} />
       </Routes>
     </BrowserRouter>
   );

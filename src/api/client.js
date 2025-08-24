@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+// src/api/client.js
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
 export async function apiFetch(path, { method = "GET", headers = {}, body, token } = {}) {
   const h = { ...headers };
