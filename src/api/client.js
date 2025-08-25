@@ -1,20 +1,18 @@
 // src/api/client.js
-const API_BASE =
+export const API_BASE =
   (import.meta?.env?.VITE_API_URL && import.meta.env.VITE_API_URL.trim()) ||
   "http://127.0.0.1:8000"; // fallback para localhost
 
 export async function apiFetch(path, opts = {}, tokenMaybe) {
-  // Compatibilidad con llamadas existentes: apiFetch(path, {}, token)
+  // Compatibilidad: apiFetch(path, {}, token)
   const token = opts.token ?? tokenMaybe;
 
   const headers = { ...(opts.headers || {}) };
+  const isForm = opts.body instanceof FormData;
 
-  // Solo ponemos Content-Type si no es FormData y el usuario no lo definió
-  const isForm = (opts.body && opts.body instanceof FormData);
   if (!isForm && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
-
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -24,17 +22,15 @@ export async function apiFetch(path, opts = {}, tokenMaybe) {
   });
 
   if (!res.ok) {
-  const text = await res.text();
-  try {
-    const j = JSON.parse(text);
-    throw new Error((j.detail ?? text) || `HTTP ${res.status}`);
-  } catch {
-    throw new Error(text || `HTTP ${res.status} ${res.statusText}`);
-  }
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text);
+      throw new Error((j.detail ?? text) || `HTTP ${res.status}`);
+    } catch {
+      throw new Error(text || `HTTP ${res.status} ${res.statusText}`);
+    }
   }
 
-
-  // Algunas respuestas 204 no traen body
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : null;
 }
