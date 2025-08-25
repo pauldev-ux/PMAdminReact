@@ -1,36 +1,62 @@
 // src/api/client.js
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+const API_BASE =
+  (import.meta?.env?.VITE_API_URL && import.meta.env.VITE_API_URL.trim()) ||
+  "http://127.0.0.1:8000"; // fallback para localhost
 
-export async function apiFetch(path, { method = "GET", headers = {}, body, token } = {}) {
-  const h = { ...headers };
-  if (!(body instanceof FormData)) h["Content-Type"] = h["Content-Type"] || "application/json";
-  if (token) h["Authorization"] = `Bearer ${token}`;
+export async function apiFetch(path, opts = {}, tokenMaybe) {
+  // Compatibilidad con llamadas existentes: apiFetch(path, {}, token)
+  const token = opts.token ?? tokenMaybe;
+
+  const headers = { ...(opts.headers || {}) };
+
+  // Solo ponemos Content-Type si no es FormData y el usuario no lo definió
+  const isForm = (opts.body && opts.body instanceof FormData);
+  if (!isForm && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers: h,
-    body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
+    method: opts.method || "GET",
+    headers,
+    body: isForm ? opts.body : opts.body ? JSON.stringify(opts.body) : undefined,
   });
+
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${res.status} ${res.statusText} — ${text}`);
+  const text = await res.text();
+  try {
+    const j = JSON.parse(text);
+    throw new Error((j.detail ?? text) || `HTTP ${res.status}`);
+  } catch {
+    throw new Error(text || `HTTP ${res.status} ${res.statusText}`);
   }
-  return res.json();
+  }
+
+
+  // Algunas respuestas 204 no traen body
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : null;
 }
 
 export async function loginRequest(username, password) {
   const form = new URLSearchParams();
   form.set("username", username);
   form.set("password", password);
+
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form,
   });
-  if (!res.ok) throw new Error("Credenciales inválidas");
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || "Credenciales inválidas");
+  }
   return res.json(); // { access_token, token_type }
 }
 
 export function meRequest(token) {
-  return apiFetch("/auth/me", { token });
+  return apiFetch("/auth/me", {}, token);
 }
