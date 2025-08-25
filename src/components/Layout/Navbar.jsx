@@ -1,49 +1,97 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Container from "./Container";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 
-const linkStyle = ({ isActive }) => ({
-  padding: "8px 12px",
-  borderRadius: 10,
-  textDecoration: "none",
-  color: isActive ? "white" : "#333",
-  background: isActive ? "#0ea5e9" : "transparent",
-});
+const linkClass = ({ isActive }) => `pm-tab${isActive ? " active" : ""}`;
 
 export default function Navbar() {
   const { logout, user } = useAuth();
   const nav = useNavigate();
   const { count } = useCart();
+  const [open, setOpen] = useState(false);
 
-  function handleLogout() {
-    logout();
-    nav("/login", { replace: true });
-  }
+  const close = () => setOpen(false);
 
   return (
-    <div style={{ borderBottom: "1px solid #eee", background: "#fafafa" }}>
+    <header className="pm-navbar">
       <Container>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, height: 60, justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <b>PM Perfumes Admin</b>
-            <NavLink to="/perfumes" style={linkStyle}>Perfumes</NavLink>
-            <NavLink to="/marcas"   style={linkStyle}>Marca</NavLink>
-            <NavLink to="/ventas"   style={linkStyle}>Ventas{count>0?` (${count})`:""}</NavLink>
-            <NavLink to="/reportes" style={linkStyle}>Reportes de Ventas</NavLink>
-            <NavLink to="/lotes" style={linkStyle}>Lotes</NavLink>
+        <div className="pm-nav-inner">
+          {/* Lado izquierdo: marca + tabs (desktop) */}
+          <div className="pm-brand-and-tabs">
+            <button
+              className={`pm-hamburger ${open ? "open" : ""}`}
+              aria-label="Abrir menú"
+              aria-expanded={open}
+              aria-controls="pm-mobile-menu"
+              onClick={() => setOpen(o => !o)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
 
+            <div className="pm-brand">
+              <span className="dot" />
+              <b>PM</b>
+              <span className="muted">Perfumes</span>
+              <b>Admin</b>
+            </div>
+
+            {/* Tabs desktop */}
+            <nav className="pm-tabs pm-tabs-desktop" aria-label="Secciones">
+              <NavLink to="/perfumes" className={linkClass}>Perfumes</NavLink>
+              <NavLink to="/marcas"   className={linkClass}>Marca</NavLink>
+              <NavLink to="/ventas"   className={linkClass}>
+                Ventas{count>0 ? ` (${count})` : ""}
+              </NavLink>
+              <NavLink to="/reportes" className={linkClass}>Reportes de Ventas</NavLink>
+              <NavLink to="/lotes"    className={linkClass}>Lotes</NavLink>
+            </nav>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ color: "#555" }}>{user?.full_name || user?.username}</span>
-            <button onClick={() => { logout(); nav("/login", { replace: true }); }}
-              style={{ padding: "8px 12px", border: "1px solid #ddd", borderRadius: 10, background: "#f7f7f7", cursor: "pointer" }}>
+
+          {/* Lado derecho (desktop) */}
+          <div className="pm-rightside pm-right-desktop">
+            <span className="pm-user">{user?.full_name || user?.username}</span>
+            <button
+              onClick={() => { logout(); nav("/login", { replace: true }); }}
+              className="pm-btn"
+            >
               Salir
             </button>
           </div>
         </div>
       </Container>
-    </div>
+
+      {/* Menú móvil desplegable */}
+      <div
+        id="pm-mobile-menu"
+        className={`pm-mobile ${open ? "open" : ""}`}
+        onClick={close}
+      >
+        <Container>
+          <nav className="pm-mobile-list" aria-label="Menú móvil">
+            <NavLink to="/perfumes" className={linkClass} onClick={close}>Perfumes</NavLink>
+            <NavLink to="/marcas"   className={linkClass} onClick={close}>Marca</NavLink>
+            <NavLink to="/ventas"   className={linkClass} onClick={close}>
+              Ventas{count>0 ? ` (${count})` : ""}
+            </NavLink>
+            <NavLink to="/reportes" className={linkClass} onClick={close}>Reportes de Ventas</NavLink>
+            <NavLink to="/lotes"    className={linkClass} onClick={close}>Lotes</NavLink>
+
+            <div className="pm-mobile-footer">
+              <span className="pm-user">{user?.full_name || user?.username}</span>
+              <button
+                onClick={() => { logout(); nav("/login", { replace: true }); }}
+                className="pm-btn"
+              >
+                Salir
+              </button>
+            </div>
+          </nav>
+        </Container>
+      </div>
+    </header>
   );
 }

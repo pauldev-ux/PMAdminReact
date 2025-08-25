@@ -1,14 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { listBrands } from "../../api/brands";
-import { listLots } from "../../api/lots"; // 👈 NUEVO
+import { listLots } from "../../api/lots";
 import { createProduct, uploadProductImage } from "../../api/products";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
-const input   = { padding: 10, border: "1px solid #ddd", borderRadius: 10, width: "100%" };
-const btn     = { padding: "8px 12px", border: "1px solid #ddd", borderRadius: 10, background: "#f7f7f7", cursor: "pointer" };
-const btnPrim = { padding: "10px 14px", border: "1px solid #0ea5e9", borderRadius: 10, background: "#0ea5e9", color: "white", cursor: "pointer" };
-const hint    = { fontSize: 12, color: "#666" };
 
 export default function NewProduct() {
   const { token } = useAuth();
@@ -24,13 +19,13 @@ export default function NewProduct() {
   // form
   const [nombre, setNombre] = useState("");
   const [brandId, setBrandId] = useState("");
-  const [lotId, setLotId] = useState("");          // 👈 NUEVO (obligatorio)
+  const [lotId, setLotId] = useState("");
   const [precioCompra, setPrecioCompra] = useState("");
   const [envio, setEnvio] = useState("50");
   const [ganancia, setGanancia] = useState("150");
   const [precioVenta, setPrecioVenta] = useState("");
   const [autoCalc, setAutoCalc] = useState(true);
-  const [cantidad, setCantidad] = useState("1");    // por defecto 1 para cumplir back
+  const [cantidad, setCantidad] = useState("1");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -59,7 +54,7 @@ export default function NewProduct() {
     async function loadLots() {
       setLoadingLots(true);
       try {
-        const data = await listLots({}, token); // sin filtros: traemos todos, el back ya ordena por fecha/creación
+        const data = await listLots({}, token);
         setLots(Array.isArray(data) ? data : []);
       } catch (e) {
         setErr(e.message || "Error cargando lotes");
@@ -113,7 +108,7 @@ export default function NewProduct() {
         precio_venta:  normalizeDec(precioVenta),
         cantidad: Number(cantidad),
         activo: true,
-        lot_id: Number(lotId),           // 👈 NUEVO: exigido por el backend
+        lot_id: Number(lotId),
       };
       const created = await createProduct(payload, token);
       let updated = created;
@@ -129,7 +124,7 @@ export default function NewProduct() {
     }
   }
 
-  // ordenar lotes por fecha desc, luego id desc (para que salgan arriba los recientes)
+  // ordenar lotes reciente → antiguo
   const sortedLots = useMemo(() => {
     return [...lots].sort((a, b) => {
       const fa = a.fecha || a.created_at || "";
@@ -142,34 +137,33 @@ export default function NewProduct() {
 
   return (
     <div style={{ padding: "16px 0" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+      <div className="pm-page-head">
         <h2>Nuevo producto</h2>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn" style={btn} onClick={() => nav("/lotes/nuevo")}>Crear lote</button>
-          <button className="btn" style={btn} onClick={() => nav("/perfumes")}>Volver</button>
+        <div className="pm-row">
+          <button className="pm-btn" onClick={() => nav("/lotes/nuevo")}>Crear lote</button>
+          <button className="pm-btn" onClick={() => nav("/perfumes")}>Volver</button>
         </div>
       </div>
 
-      <form onSubmit={onSubmit}
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, alignItems: "end", marginTop: 12 }}>
+      <form onSubmit={onSubmit} className="pm-form">
         {/* Lote (obligatorio) */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label>Lote <span style={{ color:"#b00020" }}>*</span></label>
-          <select style={input} value={lotId} onChange={(e)=>setLotId(e.target.value)} disabled={loadingLots}>
+        <div className="pm-col-2">
+          <label className="pm-label">Lote <span style={{ color:"#b00020" }}>*</span></label>
+          <select className="pm-select" value={lotId} onChange={(e)=>setLotId(e.target.value)} disabled={loadingLots}>
             <option value="">— Seleccionar lote —</option>
             {sortedLots.map(l => (
               <option key={l.id} value={l.id}>
-                {l.nombre} — { (l.fecha || l.created_at || "").slice(0,10) } — #{l.id}
+                {l.nombre} — {(l.fecha || l.created_at || "").slice(0,10)} — #{l.id}
               </option>
             ))}
           </select>
-          <div style={hint}>Si no aparece, crea un lote y vuelve.</div>
+          <div className="pm-hint">Si no aparece, crea un lote y vuelve.</div>
         </div>
 
         {/* Marca */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label>Marca</label>
-          <select style={input} value={brandId} onChange={(e)=>setBrandId(e.target.value)} disabled={loadingBrands}>
+        <div className="pm-col-2">
+          <label className="pm-label">Marca</label>
+          <select className="pm-select" value={brandId} onChange={(e)=>setBrandId(e.target.value)} disabled={loadingBrands}>
             <option value="">(Sin marca)</option>
             {brands.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(b => (
               <option key={b.id} value={b.id}>{b.nombre}</option>
@@ -178,33 +172,34 @@ export default function NewProduct() {
         </div>
 
         {/* Nombre */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label>Nombre</label>
-          <input style={input} value={nombre} onChange={(e)=>setNombre(e.target.value)} placeholder="Sauvage EDT 100ml" required />
+        <div className="pm-col-2">
+          <label className="pm-label">Nombre</label>
+          <input className="pm-input" value={nombre} onChange={(e)=>setNombre(e.target.value)} placeholder="Sauvage EDT 100ml" required />
         </div>
 
         {/* Precios */}
         <div>
-          <label>Precio compra</label>
-          <input style={input} value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} placeholder="250.00" />
+          <label className="pm-label">Precio compra</label>
+          <input className="pm-input" value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} placeholder="250.00" />
         </div>
         <div>
-          <label>Envío (BOB)</label>
-          <input style={input} value={envio} onChange={(e)=>setEnvio(e.target.value)} placeholder="50" />
+          <label className="pm-label">Envío (BOB)</label>
+          <input className="pm-input" value={envio} onChange={(e)=>setEnvio(e.target.value)} placeholder="50" />
         </div>
         <div>
-          <label>Posible ganancia (BOB)</label>
-          <input style={input} value={ganancia} onChange={(e)=>setGanancia(e.target.value)} placeholder="150" />
+          <label className="pm-label">Posible ganancia (BOB)</label>
+          <input className="pm-input" value={ganancia} onChange={(e)=>setGanancia(e.target.value)} placeholder="150" />
         </div>
         <div>
-          <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <label className="pm-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>Precio venta</span>
-            <span style={{ fontSize: 12, color: "#555" }}>
+            <span className="pm-muted" style={{ fontSize: 12 }}>
               <input type="checkbox" checked={autoCalc} onChange={(e)=>setAutoCalc(e.target.checked)} /> auto
             </span>
           </label>
           <input
-            style={{ ...input, background: autoCalc ? "#f9fafb" : "white" }}
+            className="pm-input"
+            style={{ background: autoCalc ? "#0e1422" : "transparent" }}
             value={precioVenta}
             onChange={(e)=>setPrecioVenta(e.target.value)}
             placeholder="450.00"
@@ -214,27 +209,32 @@ export default function NewProduct() {
 
         {/* Cantidad */}
         <div>
-          <label>Cantidad</label>
-          <input style={input} type="number" min="1" step="1" value={cantidad} onChange={(e)=>setCantidad(e.target.value)} />
-          <div style={hint}>Debe ser &gt; 0 (se asentará en el lote).</div>
+          <label className="pm-label">Cantidad</label>
+          <input className="pm-input" type="number" min="1" step="1" value={cantidad} onChange={(e)=>setCantidad(e.target.value)} />
+          <div className="pm-hint">Debe ser &gt; 0 (se asentará en el lote).</div>
         </div>
 
         {/* Imagen */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label>Imagen (opcional)</label>
-          <input type="file" accept="image/*" onChange={onFile} style={input} />
-          {preview && <img src={preview} alt="preview" style={{ marginTop: 8, width: 120, height: 120, objectFit: "cover", borderRadius: 12, border: "1px solid #eee" }} />}
+        <div className="pm-col-2">
+          <label className="pm-label">Imagen (opcional)</label>
+          <input type="file" accept="image/*" onChange={onFile} className="pm-file" />
+          {preview && (
+            <img
+              src={preview} alt="preview"
+              style={{ marginTop: 8, width: 120, height: 120, objectFit: "cover", borderRadius: 12, border: "1px solid var(--border)" }}
+            />
+          )}
         </div>
 
         {/* Acciones */}
-        <div style={{ display: "flex", gap: 8, gridColumn: "span 2" }}>
-          <button disabled={saving || loadingLots} style={btnPrim}>{saving ? "Guardando…" : "Guardar"}</button>
-          <button type="button" onClick={()=>nav("/perfumes")} style={btn}>Cancelar</button>
+        <div className="pm-row pm-col-2" style={{ gap:8 }}>
+          <button disabled={saving || loadingLots} className="pm-btn primary">{saving ? "Guardando…" : "Guardar"}</button>
+          <button type="button" onClick={()=>nav("/perfumes")} className="pm-btn">Cancelar</button>
         </div>
       </form>
 
-      {err && <div style={{ color: "#b00020", marginTop: 8 }}>{err}</div>}
-      {ok  && <div style={{ color: "#0a7e07", marginTop: 8 }}>{ok}</div>}
+      {err && <div className="pm-alert error" style={{ marginTop: 8 }}>{err}</div>}
+      {ok  && <div className="pm-alert ok" style={{ marginTop: 8 }}>{ok}</div>}
     </div>
   );
 }

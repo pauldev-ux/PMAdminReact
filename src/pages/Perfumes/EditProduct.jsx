@@ -5,10 +5,6 @@ import { listBrands } from "../../api/brands";
 import { getProduct, updateProduct, uploadProductImage } from "../../api/products";
 import { API_BASE } from "../../api/client";
 
-const input   = { padding: 10, border: "1px solid #ddd", borderRadius: 10, width: "100%" };
-const btn     = { padding: "8px 12px", border: "1px solid #ddd", borderRadius: 10, background: "#f7f7f7", cursor: "pointer" };
-const btnPrim = { padding: "10px 14px", border: "1px solid #0ea5e9", borderRadius: 10, background: "#0ea5e9", color: "white", cursor: "pointer" };
-
 const PLACEHOLDER_IMG =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f0f0f0'/><text x='50%' y='52%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='12' fill='#888'>IMG</text></svg>`);
@@ -42,7 +38,6 @@ export default function EditProduct() {
       try {
         const [p, b] = await Promise.all([ getProduct(id, token), listBrands(token) ]);
         setBrands(b || []);
-        // precargar valores
         setNombre(p.nombre || "");
         setBrandId(p.brand_id ?? "");
         setPrecioCompra(String(p.precio_compra ?? ""));
@@ -113,19 +108,17 @@ export default function EditProduct() {
       <h2>Editar producto / Aumentar stock</h2>
 
       {loading ? (
-        <div>Cargando…</div>
+        <div className="pm-muted">Cargando…</div>
       ) : (
-        <form onSubmit={onSubmit}
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, alignItems: "end", marginTop: 12 }}>
-
-          <div style={{ gridColumn: "span 2" }}>
-            <label>Nombre</label>
-            <input style={input} value={nombre} onChange={(e)=>setNombre(e.target.value)} required />
+        <form onSubmit={onSubmit} className="pm-form">
+          <div className="pm-col-2">
+            <label className="pm-label">Nombre</label>
+            <input className="pm-input" value={nombre} onChange={(e)=>setNombre(e.target.value)} required />
           </div>
 
-          <div style={{ gridColumn: "span 2" }}>
-            <label>Marca</label>
-            <select style={input} value={brandId} onChange={(e)=>setBrandId(e.target.value)}>
+          <div className="pm-col-2">
+            <label className="pm-label">Marca</label>
+            <select className="pm-select" value={brandId} onChange={(e)=>setBrandId(e.target.value)}>
               <option value="">(Sin marca)</option>
               {brands.sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(b => (
                 <option key={b.id} value={b.id}>{b.nombre}</option>
@@ -134,43 +127,46 @@ export default function EditProduct() {
           </div>
 
           <div>
-            <label>Precio compra</label>
-            <input style={input} value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} />
+            <label className="pm-label">Precio compra</label>
+            <input className="pm-input" value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} />
           </div>
           <div>
-            <label>Precio venta</label>
-            <input style={input} value={precioVenta} onChange={(e)=>setPrecioVenta(e.target.value)} />
-          </div>
-
-          <div>
-            <label>Stock actual</label>
-            <input style={{ ...input, background:"#f4f5f7" }} value={cantidadActual} readOnly />
-          </div>
-          <div>
-            <label>Sumar al stock</label>
-            <input style={input} type="number" min="0" step="1" value={sumarCantidad} onChange={(e)=>setSumarCantidad(e.target.value)} />
-            <div style={{ fontSize:12, color:"#555", marginTop:4 }}>Nuevo stock: <b>{nuevoStock}</b></div>
+            <label className="pm-label">Precio venta</label>
+            <input className="pm-input" value={precioVenta} onChange={(e)=>setPrecioVenta(e.target.value)} />
           </div>
 
           <div>
-            <label>Activo</label><br />
+            <label className="pm-label">Stock actual</label>
+            <input className="pm-input" value={cantidadActual} readOnly />
+          </div>
+          <div>
+            <label className="pm-label">Sumar al stock</label>
+            <input className="pm-input" type="number" min="0" step="1" value={sumarCantidad} onChange={(e)=>setSumarCantidad(e.target.value)} />
+            <div className="pm-hint">Nuevo stock: <b>{nuevoStock}</b></div>
+          </div>
+
+          <div>
+            <label className="pm-label">Activo</label><br />
             <input type="checkbox" checked={activo} onChange={(e)=>setActivo(e.target.checked)} />
           </div>
 
-          <div style={{ gridColumn: "span 2" }}>
-            <label>Imagen (opcional, reemplaza la actual)</label>
-            <input type="file" accept="image/*" onChange={onFile} style={input} />
-            <img src={img} alt="preview" style={{ marginTop: 8, width: 120, height: 120, objectFit: "cover", borderRadius: 12, border: "1px solid #eee" }}
-                 onError={(e)=>{e.currentTarget.src=PLACEHOLDER_IMG}}/>
+          <div className="pm-col-2">
+            <label className="pm-label">Imagen (opcional, reemplaza la actual)</label>
+            <input type="file" accept="image/*" onChange={onFile} className="pm-file" />
+            <img
+              src={img} alt="preview"
+              style={{ marginTop: 8, width: 120, height: 120, objectFit: "cover", borderRadius: 12, border: "1px solid var(--border)" }}
+              onError={(e)=>{e.currentTarget.src=PLACEHOLDER_IMG}}
+            />
           </div>
 
-          <div style={{ display: "flex", gap: 8, gridColumn: "span 2" }}>
-            <button disabled={saving} style={btnPrim}>{saving ? "Guardando…" : "Guardar"}</button>
-            <button type="button" onClick={()=>nav("/perfumes")} style={btn}>Cancelar</button>
+          <div className="pm-row pm-col-2" style={{ gap:8 }}>
+            <button disabled={saving} className="pm-btn primary">{saving ? "Guardando…" : "Guardar"}</button>
+            <button type="button" onClick={()=>nav("/perfumes")} className="pm-btn">Cancelar</button>
           </div>
 
-          {err && <div style={{ color: "#b00020", gridColumn: "span 4" }}>{err}</div>}
-          {ok  && <div style={{ color: "#0a7e07", gridColumn: "span 4" }}>{ok}</div>}
+          {err && <div className="pm-alert error pm-col-4">{err}</div>}
+          {ok  && <div className="pm-alert ok pm-col-4">{ok}</div>}
         </form>
       )}
     </div>
