@@ -258,3 +258,237 @@ tbody tr:hover{ background:rgba(0,0,0,.03) }
   margin-top:.4rem; padding-top:.6rem; border-top:1px dashed var(--border);
   display:flex; align-items:center; justify-content:space-between; gap:.6rem;
 }
+
+
+
+
+/* ====== Anti-scroll lateral (parche fino) ====== */
+
+/* 1) El panel móvil no debe usar 100vw (causa overflow con el padding del container) */
+.pm-mobile{ width: 100%; }           /* antes 100vw */
+
+/* 2) Contenedores principales no permiten overflow horizontal */
+html, body, #root, .pm-navbar, .pm-container{ overflow-x: clip; }
+
+/* 3) Sticky col sin box-shadow (ese px extra empuja el ancho) */
+.pm-table .sticky-col{
+  position: sticky;
+  left: 0;
+  background:#fff;
+  z-index: 1;
+  box-shadow: none;                  /* quitar sombra que generaba overflow */
+}
+.pm-table .sticky-col::after{
+  content:"";
+  position:absolute; top:0; right:0; bottom:0; width:1px;
+  background: var(--border);         /* divisor sutil que no empuja ancho */
+  pointer-events: none;
+}
+
+/* 4) El contenedor de tabla absorbe todo el scroll horizontal internamente */
+.table-wrap{
+  max-width:100%;
+  overflow-x:auto;
+  overscroll-behavior-x: contain;    /* evita que el gesto se “escape” al body */
+}
+
+/* 5) Ajuste mini: evita que celdas con inputs fuercen ancho raro */
+.pm-table td > .pm-input{ min-width: 0; }
+
+
+/* ===== Reporte de ventas: cards ===== */
+.sales-list{
+  display:grid;
+  gap:.75rem;
+}
+
+.sale-card{
+  padding:.75rem;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+
+.sale-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  margin-bottom:.35rem;
+}
+.sale-no{ font-weight:700; }
+.sale-date{ color:var(--muted); font-size:.92rem; }
+
+.sale-products{
+  margin:.25rem 0 .55rem;
+  word-break: break-word; /* nombres largos no rompen el layout */
+}
+
+.sale-totals{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.6rem .7rem;
+}
+.sale-totals .kv{
+  display:flex; gap:.45rem; align-items:baseline;
+  padding:.35rem .6rem;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background: var(--panel-2);
+}
+.sale-totals .kv span:first-child{
+  color:var(--muted);
+  font-size:.85rem;
+}
+
+@media (max-width:480px){
+  .sale-card{ padding:.65rem }
+  .sale-totals{ gap:.45rem }
+  .sale-totals .kv{ padding:.3rem .5rem }
+}
+
+/* Valor grande de KPI */
+.kpi-value{ font-size:22px; font-weight:700; }
+
+/* Ganancia en verde oscuro (y rojo si negativa) */
+.profit{ color:#14532d !important; font-weight:700; }
+
+/* Reutilizo estilos de cards para lotes también */
+.sales-list, .lots-list{ display:grid; gap:.75rem; }
+
+.sale-card, .lot-card{
+  padding:.75rem;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+
+.sale-top, .lot-top{
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  margin-bottom:.35rem;
+}
+.sale-no{ font-weight:700; }
+.sale-date, .lot-date{ color:var(--muted); font-size:.92rem; }
+
+.sale-products, .lot-products{
+  margin:.25rem 0 .55rem;
+  word-break: break-word;
+}
+
+.sale-totals, .lot-totals{
+  display:flex; flex-wrap:wrap; gap:.6rem .7rem;
+}
+.sale-totals .kv, .lot-totals .kv{
+  display:flex; gap:.45rem; align-items:baseline;
+  padding:.35rem .6rem;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background: var(--panel-2);
+}
+.sale-totals .kv span:first-child, .lot-totals .kv span:first-child{
+  color:var(--muted); font-size:.85rem;
+}
+
+@media (max-width:480px){
+  .sale-card, .lot-card{ padding:.65rem }
+  .sale-totals, .lot-totals{ gap:.45rem }
+  .sale-totals .kv, .lot-totals .kv{ padding:.3rem .5rem }
+}
+
+
+/* ---- Cart compacto para Ventas ---- */
+
+/* Cards más apretadas */
+.cart-item.cart-compact{
+  grid-template-columns: 56px 1fr auto;  /* imagen más chica */
+  padding: .65rem .75rem;
+}
+
+/* Miniatura más pequeña */
+.cart-thumb.cart-thumb-sm{
+  width:56px; height:56px; border-radius:10px;
+}
+@media (max-width:640px){
+  .cart-item.cart-compact{ grid-template-columns: 52px 1fr; }
+  .cart-thumb.cart-thumb-sm{ width:52px; height:52px; }
+}
+
+/* Título y tipografías más elegantes */
+.cart-name{ font-size:.98rem; }
+.cart-header{ margin-bottom:.35rem; }
+.subtotal-value{ font-size:1.05rem; }
+
+/* Inputs no gigantes: */
+.field{ min-width: 120px; flex: 0 1 160px; }
+
+/* Espaciados finos dentro de la card */
+.cart-fields{ gap:.5rem .6rem; }
+.cart-side{ gap:.5rem; }
+
+
+
+/* ---- Carrito: layout mejorado ---- */
+.cart-item.cart-row{
+  display:grid;
+  grid-template-columns: 84px 1fr auto;  /* imagen más grande */
+  gap:.75rem;
+  padding:.75rem .85rem;
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  background:#fff;
+  box-shadow: var(--shadow);
+  align-items: start;
+}
+.cart-thumb.cart-thumb-lg{
+  width:84px; height:84px; object-fit:cover;
+  border-radius:12px; border:1px solid #e5e7eb; background:#f8fafc;
+}
+.cart-main{ min-width:0 } /* permite que los textos se ajusten */
+.cart-header{
+  display:flex; align-items:baseline; justify-content:space-between; gap:.75rem;
+  margin-bottom:.35rem;
+}
+.cart-name{ font-size:1rem; }
+
+/* Campos compactos */
+.cart-fields{ display:flex; flex-wrap:wrap; gap:.5rem .6rem; }
+.field.sm{ flex:0 0 auto; min-width:0; }
+.pm-input.sm{ width:140px; padding:.55rem .7rem; }
+@media (max-width: 640px){
+  .cart-item.cart-row{ grid-template-columns: 80px 1fr; }
+  .cart-thumb.cart-thumb-lg{ width:80px; height:80px; }
+  .pm-input.sm{ width:110px; }
+}
+
+/* Lado derecho (subtotal + botón) */
+.cart-side{
+  display:flex; flex-direction:column; gap:.5rem;
+  align-items:flex-end; justify-content:space-between; min-width:120px;
+}
+.subtotal{ text-align:right; }
+.subtotal-value{ font-size:1.05rem; }
+
+
+/* === Tablas estrechas (sin scroll lateral) === */
+.pm-table--narrow{
+  min-width: 0 !important;         /* anula el min-width global de 720px */
+  table-layout: fixed;              /* distribuye por ancho de columnas */
+}
+.pm-table--narrow th,
+.pm-table--narrow td{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;          /* nombres largos no rompen */
+  padding: .6rem .7rem;             /* un pelín más compacta */
+}
+.pm-table--narrow .pm-col-id{
+  width: 64px;                      /* columna ID bien angosta */
+}
+
+/* opcional: tipografía un poquito menor en móvil */
+@media (max-width: 480px){
+  .pm-table--narrow th,
+  .pm-table--narrow td{ font-size: .92rem; }
+}

@@ -84,41 +84,59 @@ export default function Brands() {
         <button onClick={load} style={btn}>Recargar</button>
       </div>
 
-      {/* Lista */}
+            {/* Lista */}
       {loading ? (
         <div>Cargando…</div>
       ) : filtered.length === 0 ? (
         <div style={{ color: "#666" }}>No hay marcas.</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <Th>ID</Th>
-                <Th>Nombre</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(b => (
-                <tr key={b.id}>
-                  <Td>{b.id}</Td>
-                  <Td>{b.nombre}</Td>
+        <>
+          <div className="table-wrap">
+            <table className="pm-table pm-table--narrow">
+              <thead>
+                <tr>
+                  <Th className="pm-col-id">ID</Th>
+                  <Th>Nombre</Th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map(b => (
+                  <tr key={b.id}>
+                    <Td className="pm-col-id">{b.id}</Td>
+                    <Td title={b.nombre}>{b.nombre}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div style={{ marginTop: 8, color: "#666" }}>
             Total: <b>{filtered.length}</b> {search ? `(filtrado de ${brands.length})` : null}
           </div>
-        </div>
+        </>
       )}
+
     </div>
   );
 }
 
-function Th({ children }) {
-  return <th style={{ textAlign: "left", padding: 8, borderBottom: "1px solid #eee", fontWeight: 600 }}>{children}</th>;
+function Th({ children, className = "" }) {
+  return (
+    <th
+      className={className}
+      style={{ textAlign: "left", padding: ".6rem .7rem", borderBottom: "1px solid var(--border)", fontWeight: 600 }}
+    >
+      {children}
+    </th>
+  );
 }
-function Td({ children }) {
-  return <td style={{ padding: 8, borderBottom: "1px solid #f3f3f3" }}>{children}</td>;
+function Td({ children, className = "" }) {
+  return (
+    <td
+      className={className}
+      style={{ padding: ".6rem .7rem", borderBottom: "1px solid var(--border)" }}
+    >
+      {children}
+    </td>
+  );
 }
+

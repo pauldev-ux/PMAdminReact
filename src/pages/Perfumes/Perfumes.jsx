@@ -6,20 +6,19 @@ import { API_BASE } from "../../api/client";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router-dom";
 
-
-const PLACEHOLDER_IMG = "data:image/svg+xml;utf8," + encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='100%' height='100%' fill='#f0f0f0'/><text x='50%' y='52%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='12' fill='#888'>IMG</text></svg>`
-);
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='100%' height='100%' fill='#f0f0f0'/><text x='50%' y='52%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='12' fill='#888'>IMG</text></svg>`);
 
 export default function Perfumes() {
   const { token } = useAuth();
-  const { addItem } = useCart();
+  const { items, addItem } = useCart();              // ← traemos items para saber si ya está en el carrito
   const nav = useNavigate();
 
   const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [search, setSearch] = useState("");
-  const [onlyActive, setOnlyActive] = useState(true);
+  const [onlyActive, setOnlyActive] = useState(true); // “Perfumes disponibles”
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
@@ -36,7 +35,10 @@ export default function Perfumes() {
         listProducts({ search, only_active: onlyActive }, token),
         listBrands(token),
       ]);
-      setProducts(p || []);
+
+      // Si está marcado “Perfumes disponibles”, filtramos los que tengan stock > 0
+      const list = Array.isArray(p) ? (onlyActive ? p.filter(x => Number(x.cantidad) > 0) : p) : [];
+      setProducts(list);
       setBrands(b || []);
     } catch (e) {
       setErr(e.message || "Error cargando productos");
@@ -55,6 +57,9 @@ export default function Perfumes() {
   function handleImgError(e) { e.currentTarget.src = PLACEHOLDER_IMG; }
   function fmt(x) { const n = Number(x); return isNaN(n) ? "-" : n.toFixed(2); }
 
+  // set con ids de productos ya en el carrito
+  const inCartIds = useMemo(() => new Set((items || []).map(it => it.product_id)), [items]);
+
   return (
     <div style={{ padding: "16px 0" }}>
       {/* Encabezado */}
@@ -72,12 +77,17 @@ export default function Perfumes() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          {/* icono opcional por CSS/absoluto si luego quieres */}
         </div>
+
         <label className="pm-row">
-          <input type="checkbox" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} />
-          <span className="pm-muted">Solo activos</span>
+          <input
+            type="checkbox"
+            checked={onlyActive}
+            onChange={(e) => setOnlyActive(e.target.checked)}
+          />
+          <span className="pm-muted">Perfumes disponibles</span>
         </label>
+
         <button onClick={load} className="pm-btn">Buscar</button>
       </div>
 
@@ -89,28 +99,32 @@ export default function Perfumes() {
       <div className="pm-grid">
         {products.map((p) => {
           const brand = p.brand_id ? brandNameById.get(p.brand_id) : "-";
+          const added = inCartIds.has(p.id); // ¿ya está en el carrito?
+
           return (
             <div key={p.id} className="pm-card">
               <img src={imgSrcOf(p)} alt={p.nombre} className="pm-thumb" onError={handleImgError} loading="lazy" />
               <div style={{ display: "grid", gap: 4 }}>
-                <div className="pm-row" style={{ justifyContent:"space-between" }}>
+                <div className="pm-row" style={{ justifyContent: "space-between" }}>
                   <b>{p.nombre}</b>
-                  <span className="pm-muted" style={{ fontSize:12 }}>ID: {p.id}</span>
+                  <span className="pm-muted" style={{ fontSize: 12 }}>ID: {p.id}</span>
                 </div>
                 <div className="pm-muted">Marca: <b>{brand}</b></div>
-                <div className="pm-row wrap" style={{ gap:16 }}>
+                <div className="pm-row wrap" style={{ gap: 16 }}>
                   <span>Venta: <b>{fmt(p.precio_venta)}</b></span>
                   <span>Stock: <b>{p.cantidad}</b></span>
                 </div>
 
-                <div className="pm-row" style={{ gap:8, marginTop:6 }}>
+                <div className="pm-row" style={{ gap: 8, marginTop: 6 }}>
                   <button
-                    onClick={() => addItem(p)}
-                    className="pm-btn primary"
+                    onClick={() => { if (!added) addItem(p); }}
+                    className={`pm-btn ${added ? "success" : "primary"}`}
                     style={{ padding: "8px 12px" }}
+                    disabled={added}
                   >
-                    Añadir al carrito
+                    {added ? "Añadido al carrito" : "Añadir al carrito"}
                   </button>
+
                   <button
                     onClick={() => nav(`/perfumes/${p.id}/editar`)}
                     className="pm-btn"

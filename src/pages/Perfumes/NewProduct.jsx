@@ -178,34 +178,69 @@ export default function NewProduct() {
         </div>
 
         {/* Precios */}
-        <div>
-          <label className="pm-label">Precio compra</label>
-          <input className="pm-input" value={precioCompra} onChange={(e)=>setPrecioCompra(e.target.value)} placeholder="250.00" />
-        </div>
-        <div>
-          <label className="pm-label">Envío (BOB)</label>
-          <input className="pm-input" value={envio} onChange={(e)=>setEnvio(e.target.value)} placeholder="50" />
-        </div>
-        <div>
-          <label className="pm-label">Posible ganancia (BOB)</label>
-          <input className="pm-input" value={ganancia} onChange={(e)=>setGanancia(e.target.value)} placeholder="150" />
-        </div>
-        <div>
-          <label className="pm-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>Precio venta</span>
-            <span className="pm-muted" style={{ fontSize: 12 }}>
-              <input type="checkbox" checked={autoCalc} onChange={(e)=>setAutoCalc(e.target.checked)} /> auto
-            </span>
-          </label>
-          <input
-            className="pm-input"
-            style={{ background: autoCalc ? "#0e1422" : "transparent" }}
-            value={precioVenta}
-            onChange={(e)=>setPrecioVenta(e.target.value)}
-            placeholder="450.00"
-            readOnly={autoCalc}
-          />
-        </div>
+<div>
+  <label className="pm-label">Precio compra</label>
+  <input
+    className="pm-input"
+    type="number"
+    step="0.01"
+    inputMode="decimal"
+    value={precioCompra}
+    onChange={(e)=>setPrecioCompra(e.target.value)}
+    placeholder="250.00"
+  />
+</div>
+<div>
+  <label className="pm-label">Envío (BOB)</label>
+  <input
+    className="pm-input"
+    type="number"
+    step="0.01"
+    inputMode="decimal"
+    value={envio}
+    onChange={(e)=>setEnvio(e.target.value)}
+    placeholder="50"
+  />
+</div>
+<div>
+  <label className="pm-label">Posible ganancia (BOB)</label>
+  <input
+    className="pm-input"
+    type="number"
+    step="0.01"
+    inputMode="decimal"
+    value={ganancia}
+    onChange={(e)=>setGanancia(e.target.value)}
+    placeholder="150"
+  />
+</div>
+<div>
+  <label
+    className="pm-label"
+    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+  >
+    <span>Precio venta</span>
+    <span className="pm-muted" style={{ fontSize: 12 }}>
+      <input
+        type="checkbox"
+        checked={autoCalc}
+        onChange={(e)=>setAutoCalc(e.target.checked)}
+      />{" "}
+      auto
+    </span>
+  </label>
+  <input
+    className="pm-input"
+    type="number"
+    step="0.01"
+    inputMode="decimal"
+    value={precioVenta}
+    onChange={(e)=>setPrecioVenta(e.target.value)}
+    placeholder="450.00"
+    readOnly={autoCalc}   // ← sin inline style; usa el estilo readonly del CSS
+  />
+</div>
+
 
         {/* Cantidad */}
         <div>

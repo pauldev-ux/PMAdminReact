@@ -5,24 +5,22 @@ import { listProducts } from "../../api/products";
 import { listBrands } from "../../api/brands";
 import { useNavigate } from "react-router-dom";
 
-const input  = { padding: 8, border: "1px solid #ddd", borderRadius: 10, width: "100%" };
-const btn    = { padding: "8px 12px", border: "1px solid #ddd", borderRadius: 10, background: "#f7f7f7", cursor: "pointer" };
-const btnPrim= { padding: "8px 12px", border: "1px solid #0ea5e9", borderRadius: 10, background: "#0ea5e9", color: "white", cursor: "pointer" };
 const badge  = { padding: "10px 14px", border: "1px solid #eee", borderRadius: 12, background: "white" };
-
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function firstDayOfMonthStr(){ const d=new Date(); d.setDate(1); return d.toISOString().slice(0,10); }
 const n2 = (x) => { const n = Number(x); return Number.isFinite(n) ? n : 0; };
 
 export default function Lotes(){
   const { token } = useAuth();
   const nav = useNavigate();
 
-  // filtros
-  const [fromDate, setFromDate] = useState(firstDayOfMonthStr());
-  const [toDate, setToDate] = useState(todayStr());
-  const [lotId, setLotId] = useState("");     // filtrar por un lote específico
-  const [qName, setQName] = useState("");     // por nombre de producto o lote
+  // filtros (vacíos ⇒ mostrar TODO)
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [lotId, setLotId] = useState("");
+  const [qName, setQName] = useState("");
+
+  // toggles UI
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   // data
   const [lots, setLots] = useState([]);
@@ -36,8 +34,12 @@ export default function Lotes(){
   async function load(){
     setLoading(true); setErr(null);
     try{
+      const params = {};
+      if (fromDate) params.from_date = fromDate;
+      if (toDate) params.to_date = toDate;
+
       const [ls, ps, bs] = await Promise.all([
-        listLots({ from_date: fromDate, to_date: toDate }, token),
+        listLots(params, token),
         listProducts({}, token),
         listBrands(token),
       ]);
@@ -90,7 +92,6 @@ export default function Lotes(){
         arr.push(row);
       }
     }
-    // ordenar por fecha lote desc
     return arr.sort((a,b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0));
   }, [lots, productMap, brandNameById, lotId, qName]);
 
@@ -106,84 +107,131 @@ export default function Lotes(){
 
   return (
     <div style={{ padding: "16px 0" }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
+      {/* Header + iconos */}
+      <div className="pm-page-head">
         <h2>Lotes</h2>
-        <button onClick={()=>nav("/lotes/nuevo")} style={btnPrim}>Nuevo lote</button>
+        <div className="pm-row">
+          <button onClick={()=>nav("/lotes/nuevo")} className="pm-btn primary">Nuevo lote</button>
+
+          <button
+            type="button"
+            className="pm-btn ghost"
+            title="Buscar producto"
+            aria-label="Buscar"
+            onClick={()=>setShowSearch(v=>!v)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className="pm-btn ghost"
+            title="Filtrar por fecha"
+            aria-label="Filtro"
+            onClick={()=>setShowFilters(v=>!v)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 4h18l-7 8v6l-4 2v-8z"></path>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* filtros */}
-      <form onSubmit={onSubmit} style={{ display:"grid", gridTemplateColumns:"160px 160px 1fr 220px 120px 120px", gap:8, alignItems:"end", margin:"12px 0" }}>
-        <div>
-          <label>Desde</label>
-          <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} style={input}/>
+      {/* Búsqueda */}
+      {showSearch && (
+        <div style={{ marginBottom: 10 }}>
+          <input
+            className="pm-input"
+            value={qName}
+            onChange={e=>setQName(e.target.value)}
+            placeholder="producto"
+          />
         </div>
-        <div>
-          <label>Hasta</label>
-          <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} style={input}/>
-        </div>
-        <div>
-          <label>Buscar (lote o producto)</label>
-          <input value={qName} onChange={e=>setQName(e.target.value)} style={input} placeholder="Nombre de lote o producto"/>
-        </div>
-        <div>
-          <label>Lote</label>
-          <select value={lotId} onChange={e=>setLotId(e.target.value)} style={input}>
-            <option value="">(Todos)</option>
-            {lots.map(l => <option key={l.id} value={l.id}>{l.nombre} — {l.fecha?.slice(0,10)}</option>)}
-          </select>
-        </div>
-        <button style={btn}>Buscar</button>
-        <button type="button" style={btn} onClick={()=>{ setLotId(""); setQName(""); setFromDate(firstDayOfMonthStr()); setToDate(todayStr()); load(); }}>
-          Limpiar
-        </button>
-      </form>
+      )}
+
+      {/* Filtros fecha */}
+      {showFilters && (
+        <form onSubmit={onSubmit} className="pm-form" style={{ margin: "8px 0 12px" }}>
+          <div>
+            <label className="pm-label">Desde</label>
+            <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} className="pm-input"/>
+          </div>
+          <div>
+            <label className="pm-label">Hasta</label>
+            <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} className="pm-input"/>
+          </div>
+          <div>
+            <label className="pm-label">Lote</label>
+            <select value={lotId} onChange={e=>setLotId(e.target.value)} className="pm-select">
+              <option value="">(Todos)</option>
+              {lots.map(l => <option key={l.id} value={l.id}>{l.nombre} — {l.fecha?.slice(0,10)}</option>)}
+            </select>
+          </div>
+          <div className="pm-row" style={{ gap:8 }}>
+            <button className="pm-btn">Aplicar</button>
+            <button type="button" className="pm-btn" onClick={()=>{ setLotId(""); setFromDate(""); setToDate(""); load(); }}>
+              Limpiar
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* KPIs */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:10, marginBottom:12 }}>
-        <div style={badge}><div style={{color:"#666",fontSize:12}}>N.º lotes</div><div style={{fontSize:22,fontWeight:700}}>{kpis.lotCount}</div></div>
-        <div style={badge}><div style={{color:"#666",fontSize:12}}>Unidades</div><div style={{fontSize:22,fontWeight:700}}>{kpis.units}</div></div>
-        <div style={badge}><div style={{color:"#666",fontSize:12}}>Total invertido</div><div style={{fontSize:22,fontWeight:700}}>{kpis.invested.toFixed(2)}</div></div>
+        <div style={badge}><div className="pm-muted" style={{fontSize:12}}>N.º lotes</div><div style={{fontSize:22,fontWeight:700}}>{kpis.lotCount}</div></div>
+        <div style={badge}><div className="pm-muted" style={{fontSize:12}}>Unidades</div><div style={{fontSize:22,fontWeight:700}}>{kpis.units}</div></div>
+        <div style={badge}><div className="pm-muted" style={{fontSize:12}}>Total invertido</div><div style={{fontSize:22,fontWeight:700}}>{kpis.invested.toFixed(2)}</div></div>
       </div>
 
       {loading && <div>Cargando…</div>}
       {err && <div style={{color:"#b00020"}}>{err}</div>}
 
       {!loading && !err && (
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
-            <thead>
-              <tr>
-                <Th>Fecha</Th>
-                <Th>Lote</Th>
-                <Th>Producto</Th>
-                <Th>Marca</Th>
-                <Th>Cantidad</Th>
-                <Th>Costo unit</Th>
-                <Th>Total</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={`${r.lot_id}-${r.product_id}-${i}`}>
-                  <Td>{r.fecha}</Td>
-                  <Td>{r.lot_name}</Td>
-                  <Td>{r.product_name}</Td>
-                  <Td>{r.brand_name}</Td>
-                  <Td>{r.qty}</Td>
-                  <Td>{r.unit.toFixed(2)}</Td>
-                  <Td>{r.total.toFixed(2)}</Td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr><Td colSpan={7} style={{ color:"#666" }}>No hay resultados con estos filtros.</Td></tr>
-              )}
-            </tbody>
-          </table>
+  <div className="lots-list">
+    {rows.map((r, i) => (
+      <article key={`${r.lot_id}-${r.product_id}-${i}`} className="lot-card">
+        {/* Fila 1: Lote y fecha */}
+        <div className="lot-top">
+          <div className="lot-name"><b>{r.lot_name}</b></div>
+          <div className="lot-date">{r.fecha}</div>
         </div>
-      )}
+
+        {/* Fila 2: Producto + Marca */}
+        <div className="lot-products">
+          <div><b>{r.product_name}</b></div>
+          <div className="pm-muted" style={{ fontSize: 12 }}>Marca: {r.brand_name}</div>
+        </div>
+
+        {/* Fila 3: Cantidad, Costo unit, Total */}
+        <div className="lot-totals">
+          <div className="kv">
+            <span>Cantidad</span>
+            <span>{r.qty}</span>
+          </div>
+          <div className="kv">
+            <span>Costo unit</span>
+            <span>{r.unit.toFixed(2)}</span>
+          </div>
+          <div className="kv">
+            <span>Total (BOB)</span>
+            <span><b>{r.total.toFixed(2)}</b></span>
+          </div>
+        </div>
+      </article>
+    ))}
+
+    {rows.length === 0 && (
+      <div className="pm-muted">No hay resultados con estos filtros.</div>
+    )}
+  </div>
+)}
+
     </div>
   );
 }
 
-function Th({children}){ return <th style={{ textAlign:"left", padding:8, borderBottom:"1px solid #eee", fontWeight:600 }}>{children}</th>; }
-function Td({children, ...rest}){ return <td {...rest} style={{ padding:8, borderBottom:"1px solid #f3f3f3" }}>{children}</td>; }
+function Th({children, className=""}){ return <th className={className} style={{ textAlign:"left", padding:".6rem .7rem", borderBottom:"1px solid var(--border)", fontWeight:600 }}>{children}</th>; }
+function Td({children, className="", ...rest}){ return <td className={className} {...rest} style={{ padding:".6rem .7rem", borderBottom:"1px solid var(--border)" }}>{children}</td>; }
